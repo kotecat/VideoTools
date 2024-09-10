@@ -18,7 +18,19 @@ logger = logging.getLogger(__name__)
 
 
 @throttle(calls=1, period=3)
-async def progress(current: float, total: float, m: Message, id):
+async def progress_upload(current: float, total: float, m: Message, id):
+    p = f"{current * 100 / total:.1f}%"
+    print(p)
+    with suppress(Exception):
+        t = f"<b>↙️ Loading... ({p})</b>"
+        try:
+            await m.edit_text(t)
+        except:
+            ...
+
+
+@throttle(calls=1, period=3)
+async def progress_download(current: float, total: float, m: Message, id):
     p = f"{current * 100 / total:.1f}%"
     print(p)
     with suppress(Exception):
@@ -163,7 +175,9 @@ async def process_video(message: Message, m: Message):
 
     if not exists:
         await message.download(
-            file_name=get_input_name(id)
+            file_name=get_input_name(id),
+            progress=progress_download,
+            progress_args=(m, id)
         )
     
     with suppress(Exception):
@@ -194,7 +208,7 @@ async def process_video(message: Message, m: Message):
     await message.reply_video(
         video=get_output_name(id),
         caption=message.caption,
-        progress=progress,
+        progress=progress_upload,
         progress_args=(m, id)
     )
     
