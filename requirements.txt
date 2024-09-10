@@ -2,3 +2,4 @@ pyrofork==2.3.42
 TgCrypto==1.2.5
 python-dotenv==1.0.1
 pydantic==1.10.12
+call-throttle==0.4.0

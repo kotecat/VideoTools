@@ -1,17 +1,32 @@
 from pyrogram import Client
 from pyrogram.types import Message
 from pyrogram.filters import video, private, user
+from call_throttle import throttle
 
 import os, shutil
 import asyncio
 from contextlib import suppress
 from typing import List
+import logging
 
 from src.loader import bot
 from src.config import Config
 
 
 s = asyncio.Semaphore(1)
+logger = logging.getLogger(__name__)
+
+
+@throttle(calls=1, period=3)
+async def progress(current: float, total: float, m: Message, id):
+    p = f"{current * 100 / total:.1f}%"
+    print(p)
+    with suppress(Exception):
+        t = f"<b>↗️ Sending... ({p})</b>"
+        try:
+            await m.edit_text(t)
+        except:
+            ...
 
 
 def get_input_name(id) -> str:
@@ -76,7 +91,7 @@ async def reset_bitrate_video(
     
     stdout, stderr = await process.communicate()
     out = stdout or stderr
-    print(out.decode())
+    logger.info(out.decode())
     
     return process.returncode
 
@@ -114,21 +129,30 @@ def rm_all(folder: str, safe_files: List[str], filename_is_exist: str) -> bool:
             elif os.path.isdir(file_path):
                 shutil.rmtree(file_path)
         except Exception as e:
-            print('Failed to delete %s. Reason: %s' % (file_path, e))
+            logger.error('Failed to delete %s. Reason: %s' % (file_path, e))
     
     return flag
 
 
-async def process_video(message: Message):
+async def process_video(message: Message, m: Message):
     """ Video processing.\n
     File cleaning, uploading, processing and sending.
     
     :param Message message:
     Query context.
     
+    :param Message m:
+    Info context.
+    
     :raises RPCError: In case of a Telegram RPC error.
     """
-    m = await message.reply("<b>↙️ Loading...</b>", quote=True)
+    with suppress(Exception):
+        t = "<b>↙️ Loading...</b>"
+        try:
+            await m.edit_text(t)
+        except:
+            m = await message.reply(t, quote=True)
+    
     id = message.video.file_unique_id
     
     exists = rm_all(
@@ -147,7 +171,7 @@ async def process_video(message: Message):
         try:
             await m.edit_text(t)
         except:
-            await message.reply(t, quote=True)
+            m = await message.reply(t, quote=True)
     
     status_code = await reset_bitrate_video(
         file_size=message.video.file_size,
@@ -165,12 +189,21 @@ async def process_video(message: Message):
         try:
             await m.edit_text(t)
         except:
-            await message.reply(t, quote=True)
+            m = await message.reply(t, quote=True)
         
     await message.reply_video(
         video=get_output_name(id),
-        caption=message.caption
+        caption=message.caption,
+        progress=progress,
+        progress_args=(m, id)
     )
+    
+    with suppress(Exception):
+        t = "<b>ℹ️ Success</b>"
+        try:
+            await m.edit_text(t)
+        except:
+            m = await message.reply(t, quote=True)
     
 
 async def pre_process_video(message: Message):
@@ -179,10 +212,13 @@ async def pre_process_video(message: Message):
     :param Message message:
     Query context.
     """
+    
+    m = await message.reply("<b>⏺ In queue...</b>", quote=True)
+    
     # Perhaps it's worth rewriting through the queue
     async with s:
         try:
-            task = process_video(message)
+            task = process_video(message, m)
             await asyncio.wait_for(task, timeout=Config.TIMEOUT)
         
         except asyncio.TimeoutError:
@@ -190,7 +226,7 @@ async def pre_process_video(message: Message):
             
         except Exception as e:
             await message.reply(f"<b>An error occurred ({e})</b>")
-            print(e)
+            logger.error(f"pre_process_video: {e}")
 
 
 @bot.on_message(private & video & user(list(Config.ADMIN_IDS)))
