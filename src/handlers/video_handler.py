@@ -22,7 +22,7 @@ async def progress_upload(current: float, total: float, m: Message, id):
     p = f"{current * 100 / total:.1f}%"
     print(p)
     with suppress(Exception):
-        t = f"<b>↙️ Loading... ({p})</b>"
+        t = f"<b>↗️ Sending... ({p})</b>"
         try:
             await m.edit_text(t)
         except:
@@ -34,7 +34,7 @@ async def progress_download(current: float, total: float, m: Message, id):
     p = f"{current * 100 / total:.1f}%"
     print(p)
     with suppress(Exception):
-        t = f"<b>↗️ Sending... ({p})</b>"
+        t = f"<b>↙️ Loading... ({p})</b>"
         try:
             await m.edit_text(t)
         except:
