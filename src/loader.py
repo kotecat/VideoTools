@@ -8,7 +8,7 @@ from src.config import Config
 logger = logging.getLogger(__name__)
 
 __phone = Config.PHONE_NUMBER or None
-__bot_token = (Config.BOT_TOKEN or None) if __phone is None else None
+__bot_token = None if __phone else Config.BOT_TOKEN or None
 
 if __phone is None and __bot_token is None:
     logger.error("Set please phone number or bot token in .env")

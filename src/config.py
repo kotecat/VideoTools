@@ -27,6 +27,6 @@ class Config:
     DIR_MEDIA = "m"
     FFMPEG_BIN = "ffmpeg"
     
-    DEFAULT_BIT_RATE_V = 10
-    DEFAULT_FPS = 1
-    DEFAULT_BIT_RATE_A = 10
+    DEFAULT_BIT_RATE_V = 800
+    DEFAULT_FPS = 30
+    DEFAULT_BIT_RATE_A = 175
