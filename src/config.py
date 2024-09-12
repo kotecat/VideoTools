@@ -18,6 +18,7 @@ class Config:
     API_ID = str(os.getenv("API_ID"))
     API_HASH = str(os.getenv("API_HASH"))
     BOT_TOKEN = str(os.getenv("BOT_TOKEN"))
+    PHONE_NUMBER = str(os.getenv("PHONE_NUMBER")).strip("+")
     ADMIN_IDS = set(map(lambda id: int(id.strip()), os.getenv("ADMIN_IDS").split(",")))
     
     TIMEOUT = 1000
